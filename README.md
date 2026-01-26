@@ -56,3 +56,18 @@ O objetivo é simples: sobreviver às waves de inimigos, derrotar minibosses e e
 
 ```bash
 cargo run
+```
+### 📂 Estrutura do projeto
+src/
+ ├── main.rs            # Loop principal e estados
+ ├── state_menu.rs      # Menu inicial
+ ├── state_playing.rs   # Gameplay
+ ├── player.rs          # Player
+ ├── enemy.rs           # Inimigos e comportamentos
+ ├── spawner.rs         # Waves e progressão
+ ├── bullet.rs          # Tiros do player
+ ├── enemy_bullet.rs    # Tiros dos inimigos
+ ├── explosion.rs       # Explosões animadas
+ ├── animation.rs       # Sistema de animação
+ ├── collision.rs       # Colisão AABB
+ └── star.rs            # Fundo animado
