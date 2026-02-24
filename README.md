@@ -76,13 +76,3 @@ src/
 
 Este projeto foi feito com foco em aprendizado, estrutura e feeling arcade.
 Sugestões e melhorias são bem-vindas.
-
-
----
-
-Se quiser, próximo passo natural seria:
-- ajustar o README pra **portfólio**
-- escrever um **devlog**
-- ou lapidar o texto pra parecer projeto de game jam
-
-Diz qual.
