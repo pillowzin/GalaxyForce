@@ -1,4 +1,5 @@
 use macroquad::prelude::*;
+use crate::config::{PLAYER_BULLET_HEIGHT, PLAYER_BULLET_WIDTH};
 
 pub struct Bullet {
     pub pos: Vec2,
@@ -18,18 +19,25 @@ impl Bullet {
     }
 
     pub fn draw(&self) {
-        let size = 6.0;
+        let width = PLAYER_BULLET_WIDTH;
+        let height = PLAYER_BULLET_HEIGHT;
+
         draw_rectangle(
-            self.pos.x - size / 2.0,
-            self.pos.y - size,
-            size,
-            size * 2.0,
+            self.pos.x - width / 2.0,
+            self.pos.y - height,
+            width,
+            height,
             RED,
         );
     }
 
     pub fn hitbox(&self) -> Rect {
-        Rect::new(self.pos.x - 3.0, self.pos.y - 6.0, 6.0, 12.0)
+        Rect::new(
+            self.pos.x - PLAYER_BULLET_WIDTH / 2.0,
+            self.pos.y - PLAYER_BULLET_HEIGHT,
+            PLAYER_BULLET_WIDTH,
+            PLAYER_BULLET_HEIGHT,
+        )
     }
 
     pub fn offscreen(&self) -> bool {

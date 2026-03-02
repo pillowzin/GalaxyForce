@@ -1,7 +1,10 @@
 use macroquad::prelude::*;
 
-pub const SPRITE_SIZE: f32 = 16.0;
+pub const SPRITE_SIZE: f32 = 24.0;
 pub const SCALE: f32 = 1.0;
+
+pub const PLAYER_BULLET_WIDTH: f32 = SPRITE_SIZE * 0.22;
+pub const PLAYER_BULLET_HEIGHT: f32 = SPRITE_SIZE * 0.55;
 
 pub const INTERNAL_WIDTH: u32 = 256;
 pub const INTERNAL_HEIGHT: u32 = 350;
@@ -19,4 +22,3 @@ pub fn mouse_internal() -> Vec2 {
         my * INTERNAL_HEIGHT as f32 / screen_height(),
     )
 }
-
