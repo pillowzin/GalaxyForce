@@ -1,5 +1,4 @@
 use macroquad::prelude::*;
-use crate::audio_manager::AudioManager;
 
 mod config;
 mod crt_shader;
@@ -18,16 +17,20 @@ mod star;
 mod enemy_bullet;
 mod state_paused;
 mod hud;
+mod state_death;
 
+use crate::audio_manager::AudioManager;
 use crate::crt_shader::load_crt_material;
 use std::mem;
 use crate::config::*;
 use crate::player::Player;
 use crate::animation::gerar_frames;
-use crate::state_playing::PlayingState;
+use crate::state_playing::{PlayingState, GameAssets};
 use crate::state_paused::{PausedState, PauseAction};
 use crate::state_menu::{MenuState, MenuAction};
 use crate::star::Star;
+use crate::state_death::{DeathState, DeathAction};
+
 const W: f32 = INTERNAL_WIDTH as f32;
 const H: f32 = INTERNAL_HEIGHT as f32;
 
@@ -35,6 +38,7 @@ enum GameState {
     Menu(MenuState),
     Playing(PlayingState),
     Paused(PlayingState, PausedState),
+    Death(DeathState),
 }
 
 fn window_conf() -> Conf {
@@ -143,6 +147,8 @@ async fn main() {
             };
         }
 
+        let mut next_state: Option<GameState> = None;
+
         match &mut game_state {
             GameState::Menu(menu) => {
                 menu.update(dt);
@@ -153,20 +159,24 @@ async fn main() {
                         audio.click();
                         player.reset();
                         fade_alpha = 1.0;
+                        camera_offset = Vec2::ZERO;
+                        shake_timer = 0.0;
+                        shake_strength = 0.0;
 
-                        game_state = GameState::Playing(
-                            PlayingState::new(
-                                enemy_texture.clone(),
-                                enemy2_texture.clone(),
-                                miniboss_texture.clone(),
-                                boss_texture.clone(),
-                                explosion_texture.clone(),
-                                explosion_frames.clone(),
-                                heart_texture.clone(),
-                                skull_texture.clone(),
-                            )
-                            .await,
-                        );
+                        let assets = GameAssets {
+                            normal_enemy: enemy_texture.clone(),
+                            red_enemy: enemy2_texture.clone(),
+                            miniboss: miniboss_texture.clone(),
+                            boss: boss_texture.clone(),
+                            explosion: explosion_texture.clone(),
+                            explosion_frames: explosion_frames.clone(),
+                            heart: heart_texture.clone(),
+                            skull: skull_texture.clone(),
+                        };
+
+                        next_state = Some(GameState::Playing(
+                            PlayingState::new(assets).await,
+                        ));
                     }
 
                     MenuAction::Mute => {
@@ -188,7 +198,7 @@ async fn main() {
                 player.update();
 
                 // --- CAMERA FOLLOW ---
-                let screen_center_x = screen_width() * 0.5;
+                let screen_center_x = INTERNAL_WIDTH as f32 * 0.5;
                 let target_offset_x = (screen_center_x - player.pos.x) * 0.08;
                 camera_offset.x += (target_offset_x - camera_offset.x) * 0.1;
                 camera_offset.y = 0.0;
@@ -206,6 +216,9 @@ async fn main() {
 
                 // --- GAME UPDATE ---
                 state.update(&mut player, dt);
+                if player.hp <= 0 {
+                    next_state = Some(GameState::Death(DeathState::new()));
+                }
 
                 if player.is_flashing() && !was_flashing {
                     shake_timer = 0.15;
@@ -217,7 +230,7 @@ async fn main() {
                     star.draw(camera_offset);
                 }
                 state.draw(&player, &pixel_font);
-                state.draw_hud(&player, camera_offset);
+                state.draw_hud(&player);
             }
 
             GameState::Paused(state, pause) => {
@@ -226,7 +239,7 @@ async fn main() {
                     star.draw(camera_offset);
                 }
                 state.draw(&player, &pixel_font);
-                state.draw_hud(&player, camera_offset);
+                state.draw_hud(&player);
 
                 match pause.draw(&pixel_font, audio.music_muted) {
 
@@ -234,12 +247,15 @@ async fn main() {
                         if let GameState::Paused(state, _) =
                             mem::replace(&mut game_state, GameState::Menu(MenuState::new(speaker_texture.clone())))
                         {
-                            game_state = GameState::Playing(state);
+                            next_state = Some(GameState::Playing(state));
                         }
                     }
 
                     PauseAction::Menu => {
-                        game_state = GameState::Menu(MenuState::new(speaker_texture.clone()));
+                        camera_offset = Vec2::ZERO;
+                        shake_timer = 0.0;
+                        shake_strength = 0.0;
+                        next_state = Some(GameState::Menu(MenuState::new(speaker_texture.clone())));
                     }
 
                     PauseAction::Quit => {
@@ -251,6 +267,53 @@ async fn main() {
                     }
 
                     PauseAction::None => {}
+                }
+            }
+
+            GameState::Death(death) => {
+                death.update(dt);
+
+                for star in stars.iter() {
+                    star.draw(camera_offset);
+                }
+
+                match death.draw(&pixel_font) {
+                    DeathAction::Restart => {
+                        player.reset();
+                        camera_offset = Vec2::ZERO;
+                        shake_timer = 0.0;
+                        shake_strength = 0.0;
+
+                        let assets = GameAssets {
+                            normal_enemy: enemy_texture.clone(),
+                            red_enemy: enemy2_texture.clone(),
+                            miniboss: miniboss_texture.clone(),
+                            boss: boss_texture.clone(),
+                            explosion: explosion_texture.clone(),
+                            explosion_frames: explosion_frames.clone(),
+                            heart: heart_texture.clone(),
+                            skull: skull_texture.clone(),
+                        };
+
+                        next_state = Some(GameState::Playing(
+                            PlayingState::new(assets).await
+                        ));
+                    }
+
+                    DeathAction::Menu => {
+                        camera_offset = Vec2::ZERO;
+                        shake_timer = 0.0;
+                        shake_strength = 0.0;
+                        next_state = Some(GameState::Menu(
+                            MenuState::new(speaker_texture.clone())
+                        ));
+                    }
+
+                    DeathAction::Quit => {
+                        std::process::exit(0);
+                    }
+
+                    DeathAction::None => {}
                 }
             }
         }
@@ -285,7 +348,9 @@ async fn main() {
         );
 
         gl_use_default_material();
-
+        if let Some(state) = next_state {
+            game_state = state;
+        }
         next_frame().await;
     }
 }

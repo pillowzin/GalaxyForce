@@ -10,6 +10,13 @@ use crate::hud;
 use crate::explosion::Explosion;
 use crate::enemy_bullet::EnemyBullet;
 
+struct StageParticle {
+    angle: f32,
+    radius: f32,
+    speed: f32,
+    color_offset: f32,
+}
+
 pub struct PlayingState {
     pub stage: u32,
     pub enemies: Vec<Enemy>,
@@ -19,6 +26,8 @@ pub struct PlayingState {
     pub heart_texture: Texture2D,
     pub skull_texture: Texture2D,
     pub kills: u32,
+
+    stage_particles: Vec<StageParticle>,
 
     shoot_timer: f32,
     waiting_next_stage: bool,
@@ -36,20 +45,22 @@ pub struct PlayingState {
     collide_sound: Sound,
 }
 
+pub struct GameAssets {
+    pub normal_enemy: Texture2D,
+    pub red_enemy: Texture2D,
+    pub miniboss: Texture2D,
+    pub boss: Texture2D,
+    pub explosion: Texture2D,
+    pub explosion_frames: Vec<Rect>,
+    pub heart: Texture2D,
+    pub skull: Texture2D,
+}
+
 const SHOOT_DELAY: f32 = 0.2;
-const NEXT_STAGE_DURATION: f32 = 1.0;
+const NEXT_STAGE_DURATION: f32 = 1.8;
 
 impl PlayingState {
-    pub async fn new(
-        normal_enemy_texture: Texture2D,
-        red_enemy_texture: Texture2D,
-        miniboss_texture: Texture2D,
-        boss_texture: Texture2D,
-        explosion_texture: Texture2D,
-        explosion_frames: Vec<Rect>,
-        heart_texture: Texture2D,
-        skull_texture: Texture2D,
-    ) -> Self {
+    pub async fn new(assets: GameAssets) -> Self {
         let laser_sound = load_sound("audio/laser.wav").await.unwrap();
         let collide_sound = load_sound("audio/collide.wav").await.unwrap();
 
@@ -57,10 +68,10 @@ impl PlayingState {
 
         let enemies = inimigos_para_fase(
             stage,
-            normal_enemy_texture.clone(),
-            red_enemy_texture.clone(),
-            miniboss_texture.clone(),
-            boss_texture.clone(),
+            assets.normal_enemy.clone(),
+            assets.red_enemy.clone(),
+            assets.miniboss.clone(),
+            assets.boss.clone(),
         );
 
         Self {
@@ -74,18 +85,61 @@ impl PlayingState {
             waiting_next_stage: false,
             stage_timer: 0.0,
 
-            normal_enemy_texture,
-            red_enemy_texture,
-            miniboss_texture,
-            boss_texture,
+            normal_enemy_texture: assets.normal_enemy,
+            red_enemy_texture: assets.red_enemy,
+            miniboss_texture: assets.miniboss,
+            boss_texture: assets.boss,
             laser_sound,
             collide_sound,
-            explosion_texture,
-            explosion_frames,
-            heart_texture,
-            skull_texture,
+            explosion_texture:assets.explosion,
+            explosion_frames: assets.explosion_frames,
+            heart_texture: assets.heart,
+            skull_texture: assets.skull,
             kills: 0,
+            stage_particles: (0..30).map(|i| StageParticle {
+                angle: i as f32 * 0.4,
+                radius: 5.0 + (i as f32 * 0.2),
+                speed: 1.5 + rand::gen_range(0.5, 2.0),
+                color_offset: i as f32,
+            }).collect(),
         }
+    }
+
+    fn update_stage_particles(&mut self, dt: f32) {
+        for p in self.stage_particles.iter_mut() {
+            p.angle += p.speed * dt;
+        }
+    }
+
+    fn draw_stage_particle(&self, p: &StageParticle, center: Vec2, time: f32) {
+        let fade = if time > NEXT_STAGE_DURATION - 0.6 {
+            (NEXT_STAGE_DURATION - time) / 0.6
+        } else {
+            1.0
+        };
+
+        let alpha = fade.clamp(0.0, 1.0);
+
+        let angle = p.angle + time * 0.2;
+
+        let pulse = (time * 3.0 + p.color_offset).sin();
+
+        let spiral = 8.0 + p.radius * 0.15 + pulse * 6.0;
+
+        let x = center.x + angle.cos() * spiral;
+        let y = center.y + angle.sin() * spiral * 0.85;
+
+        let r = (time * 2.0 + p.color_offset).sin() * 0.5 + 0.5;
+        let g = (time * 1.5 + p.color_offset * 0.7).sin() * 0.5 + 0.5;
+        let b = (time * 1.2 + p.color_offset * 1.3).sin() * 0.5 + 0.5;
+
+        draw_rectangle(
+            x,
+            y,
+            2.0,
+            2.0,
+            Color::new(r * 1.4, g * 1.4, b * 1.4, alpha),
+        );
     }
 
     fn handle_player_shoot(&mut self, player: &Player) {
@@ -122,25 +176,22 @@ impl PlayingState {
         }
 
         for enemy in self.enemies.iter_mut() {
+            if enemy.kind == EnemyKind::Boss
+                && rand::gen_range(0.0, 1.0) < 0.02
+            {
+                let boss_center = enemy.pos + vec2(
+                    enemy.hitbox().w / 2.0,
+                    enemy.hitbox().h / 2.0,
+                );
 
-            if enemy.kind == EnemyKind::Boss {
+                let dir = vec2(
+                    rand::gen_range(-1.0, 1.0),
+                    rand::gen_range(0.2, 1.0),
+                ).normalize_or_zero();
 
-                if rand::gen_range(0.0, 1.0) < 0.02 {
-
-                    let boss_center = enemy.pos + vec2(
-                        enemy.hitbox().w / 2.0,
-                        enemy.hitbox().h / 2.0,
-                    );
-
-                    let dir = vec2(
-                        rand::gen_range(-1.0, 1.0),
-                        rand::gen_range(0.2, 1.0),
-                    ).normalize_or_zero();
-
-                    self.enemy_bullets.push(
-                        EnemyBullet::new(boss_center, dir * 5.0)
-                    );
-                }
+                self.enemy_bullets.push(
+                    EnemyBullet::new(boss_center, dir * 5.0)
+                );
             }
         }
     }
@@ -159,14 +210,11 @@ impl PlayingState {
         for enemy in self.enemies.iter_mut() {
 
             if aabb(player.hitbox(), enemy.hitbox()) {
-
                 match enemy.kind {
-
                     EnemyKind::Normal | EnemyKind::Red => {
                         enemy.hp = 0;
-
                         if player.damage() {
-                            println!("BATEU");
+                            // aqui vem a call do death state
                         }
                     }
 
@@ -216,6 +264,10 @@ impl PlayingState {
 
                     enemy.hp -= 1;
 
+                    if enemy.hp == 0 {
+                        self.kills += 1;
+                    }
+
                     bullets_to_remove.push(bi);
 
                     let center = vec2(
@@ -253,10 +305,7 @@ impl PlayingState {
         });
     }
 
-    fn handle_enemy_bullet_player_collision(
-        &mut self,
-        player: &mut Player,
-    ) {
+    fn handle_enemy_bullet_player_collision(&mut self, player: &mut Player) {
 
         for bullet in self.enemy_bullets.iter_mut() {
 
@@ -280,14 +329,7 @@ impl PlayingState {
     }
 
     fn cleanup_dead_entities(&mut self) {
-
-        let before = self.enemies.len();
-
         self.enemies.retain(|e| e.hp > 0);
-
-        let after = self.enemies.len();
-
-        self.kills += (before - after) as u32;
     }
 
     fn handle_stage_transition(&mut self, dt: f32) {
@@ -301,6 +343,7 @@ impl PlayingState {
         if self.waiting_next_stage {
 
             self.stage_timer += dt;
+            self.update_stage_particles(dt);
 
             if self.stage_timer >= NEXT_STAGE_DURATION {
 
@@ -338,7 +381,36 @@ impl PlayingState {
     }
 
     pub fn draw(&self, player: &Player, font: &Font) {
+        if self.waiting_next_stage {
+            let center = vec2(
+                player.hitbox().x + player.hitbox().w / 2.0,
+                player.hitbox().y + player.hitbox().h * 0.7,
+            );
+
+            let time = self.stage_timer;
+
+            for p in &self.stage_particles {
+                if (p.angle + time * 0.2).sin() < 0.0 {
+                    self.draw_stage_particle(p, center, time);
+                }
+            }
+        }
         player.draw();
+
+        if self.waiting_next_stage {
+            let center = vec2(
+                player.hitbox().x + player.hitbox().w / 2.0,
+                player.hitbox().y + player.hitbox().h * 0.7,
+            );
+
+            let time = self.stage_timer;
+
+            for p in &self.stage_particles {
+                if (p.angle + time * 0.2).sin() >= 0.0 {
+                    self.draw_stage_particle(p, center, time);
+                }
+            }
+        }
 
         for enemy in self.enemies.iter() {
             enemy.draw();
@@ -357,6 +429,48 @@ impl PlayingState {
         }
 
         if self.waiting_next_stage {
+            //efeito espiral doidona
+            let center = vec2(
+                player.hitbox().x + player.hitbox().w / 2.0,
+                player.hitbox().y + player.hitbox().h / 2.0,
+            );
+
+            let time = self.stage_timer;
+
+            for p in self.stage_particles.iter() {
+                let t = self.stage_timer;
+
+                let fade = if t > NEXT_STAGE_DURATION - 0.6 {
+                    (NEXT_STAGE_DURATION - t) / 0.6
+                } else {
+                    1.0
+                };
+
+                let alpha = fade.clamp(0.0, 1.0);
+                let angle = p.angle + time * 0.2;
+                let pulse = (time * 3.0 + p.color_offset).sin();
+                let spiral = 8.0 + p.radius * 0.15 + pulse * 6.0;
+
+                let x = center.x + angle.cos() * spiral;
+                let y = center.y + angle.sin() * spiral * 0.85;
+
+                let r = (time * 2.0 + p.color_offset).sin() * 0.5 + 0.5;
+                let g = (time * 1.5 + p.color_offset * 0.7).sin() * 0.5 + 0.5;
+                let b = (time * 1.2 + p.color_offset * 1.3).sin() * 0.5 + 0.5;
+
+                let size = 2.0;
+
+                let brightness = 1.4;
+
+                draw_rectangle(
+                    x,
+                    y,
+                    size,
+                    size,
+                    Color::new(r * brightness, g * brightness, b * brightness, alpha),
+                );
+
+            }
             let t = self.stage_timer;
 
             let alpha = if t < 0.5 {
@@ -391,13 +505,12 @@ impl PlayingState {
         }
     }
 
-    pub fn draw_hud(&self, player: &Player, camera_offset: Vec2) {
+    pub fn draw_hud(&self, player: &Player) {
         hud::draw(
             player,
             &self.heart_texture,
             &self.skull_texture,
             self.kills,
-            camera_offset,
         );
     }
 }

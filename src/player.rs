@@ -28,8 +28,8 @@ impl Player {
             shake_timer: 0.0,
             last_hit_dir: Vec2::ZERO,
 
-            hp: 3,
-            max_hp: 3,
+            hp: 4,
+            max_hp: 4,
             heart_anim_frame: 0,
             heart_anim_timer: 0.0,
             heart_anim_index: -1,
@@ -52,8 +52,11 @@ impl Player {
 
         self.pos.y = (mouse.y - size / 2.0)
             .clamp(0.0, INTERNAL_HEIGHT as f32 - size);
-       
+
         let size = self.size();
+
+        self.pos.x = self.pos.x.clamp(0.0, INTERNAL_WIDTH as f32 - size);
+        self.pos.y = self.pos.y.clamp(0.0, INTERNAL_HEIGHT as f32 - size);
 
         let engine = vec2(
             self.pos.x + size * 0.5,

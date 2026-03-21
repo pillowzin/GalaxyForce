@@ -6,13 +6,11 @@ fn spawn_enemy(
     normal_texture: Texture2D,
     red_texture: Texture2D,
     miniboss_texture: Texture2D,
-    boss_texture: Texture2D,
-) -> Enemy {
+    boss_texture: Texture2D) -> Enemy {
     let enemy_size = 16.0;
     let pos = vec2(
         rand::gen_range(10.0, crate::config::INTERNAL_WIDTH as f32 - enemy_size),
-        rand::gen_range(-200.0, -20.0),
-    );
+        rand::gen_range(-200.0, -20.0));
 
     let speed = match kind {
         EnemyKind::Normal => rand::gen_range(2.0, 4.0),

@@ -81,8 +81,8 @@ impl Enemy {
         let hp = match kind {
             EnemyKind::Normal => 1,
             EnemyKind::Red => 2,
-            EnemyKind::MiniBoss => 12,
-            EnemyKind::Boss => 40,
+            EnemyKind::MiniBoss => 8,
+            EnemyKind::Boss => 30,
         };
 
         let target_x = pos.x + rand::gen_range(-50.0, 50.0);

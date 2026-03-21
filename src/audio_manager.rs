@@ -28,7 +28,7 @@ impl AudioManager {
             &self.theme,
             PlaySoundParams {
                 looped: true,
-                volume: 0.5,
+                volume: 0.4,
             },
         );
     }
