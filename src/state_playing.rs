@@ -29,9 +29,9 @@ pub struct PlayingState {
 
     stage_particles: Vec<StageParticle>,
 
-    shoot_timer: f32,
-    waiting_next_stage: bool,
-    stage_timer: f32,
+    shoot_timer: f32,          // recarga dos tiros do jogador
+    waiting_next_stage: bool,  // flag de transição após limpar a fase
+    stage_timer: f32,          // tempo decorrido durante a transição
 
     normal_enemy_texture: Texture2D,
     red_enemy_texture: Texture2D,
@@ -61,11 +61,13 @@ const NEXT_STAGE_DURATION: f32 = 1.8;
 
 impl PlayingState {
     pub async fn new(assets: GameAssets) -> Self {
+        // Áudio para laser e colisão.
         let laser_sound = load_sound("audio/laser.wav").await.unwrap();
         let collide_sound = load_sound("audio/collide.wav").await.unwrap();
 
         let stage = 1;
 
+        // Cria a primeira onda.
         let enemies = inimigos_para_fase(
             stage,
             assets.normal_enemy.clone(),
@@ -91,11 +93,12 @@ impl PlayingState {
             boss_texture: assets.boss,
             laser_sound,
             collide_sound,
-            explosion_texture:assets.explosion,
+            explosion_texture: assets.explosion,
             explosion_frames: assets.explosion_frames,
             heart_texture: assets.heart,
             skull_texture: assets.skull,
             kills: 0,
+            // Partículas para a espiral de "próxima fase".
             stage_particles: (0..30).map(|i| StageParticle {
                 angle: i as f32 * 0.4,
                 radius: 5.0 + (i as f32 * 0.2),
@@ -106,6 +109,7 @@ impl PlayingState {
     }
 
     fn update_stage_particles(&mut self, dt: f32) {
+        // Avanço angular simples para a espiral.
         for p in self.stage_particles.iter_mut() {
             p.angle += p.speed * dt;
         }
@@ -152,6 +156,7 @@ impl PlayingState {
 
             self.bullets.push(Bullet::new(origin));
 
+            // Reseta a recarga quando um tiro é criado.
             self.shoot_timer = 0.0;
 
             play_sound(
@@ -166,15 +171,18 @@ impl PlayingState {
 
     fn update_enemies(&mut self, player: &Player) {
 
+        // Leve aumento de dificuldade por fase.
         let speed_mult = 1.0 + (self.stage as f32 - 1.0) * 0.07;
 
         let player_center_x =
             player.hitbox().x + player.hitbox().w / 2.0;
 
+        // Atualização de movimento por inimigo.
         for enemy in self.enemies.iter_mut() {
             enemy.update_with_speed_mult(speed_mult, player_center_x);
         }
 
+        // Chefe atira balas ricocheteando ocasionalmente.
         for enemy in self.enemies.iter_mut() {
             if enemy.kind == EnemyKind::Boss
                 && rand::gen_range(0.0, 1.0) < 0.02
@@ -210,16 +218,19 @@ impl PlayingState {
         for enemy in self.enemies.iter_mut() {
 
             if aabb(player.hitbox(), enemy.hitbox()) {
+                // Colisão machuca o jogador; inimigos pequenos morrem no impacto.
                 match enemy.kind {
                     EnemyKind::Normal | EnemyKind::Red => {
                         enemy.hp = 0;
+                        player.hit(enemy.pos);
                         if player.damage() {
-                            // aqui vem a call do death state
                         }
                     }
 
                     EnemyKind::MiniBoss | EnemyKind::Boss => {
                         player.hit(enemy.pos);
+                        if player.damage() {
+                        }
                     }
                 }
 
@@ -275,6 +286,7 @@ impl PlayingState {
                         enemy.hitbox().y + enemy.hitbox().h / 2.0,
                     );
 
+                    // Cria uma explosão única no centro do inimigo.
                     self.explosions.push(
                         Explosion::new(
                             center - vec2(32.0, 32.0),
@@ -296,6 +308,7 @@ impl PlayingState {
             }
         }
 
+        // Remove tiros que colidiram neste quadro.
         let mut i = 0;
 
         self.bullets.retain(|_| {
@@ -315,6 +328,7 @@ impl PlayingState {
                     println!("PLAYER DEAD");
                 }
 
+                // Mata o tiro após acertar.
                 bullet.bounces_left = 0;
 
                 play_sound(
@@ -329,6 +343,7 @@ impl PlayingState {
     }
 
     fn cleanup_dead_entities(&mut self) {
+        // Remove inimigos com 0 HP.
         self.enemies.retain(|e| e.hp > 0);
     }
 
@@ -336,6 +351,7 @@ impl PlayingState {
 
         if self.enemies.is_empty() && !self.waiting_next_stage {
 
+            // Inicia transição quando a onda é limpa.
             self.waiting_next_stage = true;
             self.stage_timer = 0.0;
         }
@@ -347,8 +363,13 @@ impl PlayingState {
 
             if self.stage_timer >= NEXT_STAGE_DURATION {
 
+                // Avança para a próxima onda.
                 self.waiting_next_stage = false;
-                self.stage += 1;
+                if self.stage < 10 {
+                    self.stage += 1;
+                } else {
+                    println!("acabou!");
+                }
 
                 self.enemies = inimigos_para_fase(
                     self.stage,
@@ -362,6 +383,7 @@ impl PlayingState {
     }
 
     pub fn update(&mut self, player: &mut Player, dt: f32) {
+        // Ordem principal de atualização.
         self.shoot_timer += dt;
 
         self.handle_player_shoot(player);
@@ -382,6 +404,7 @@ impl PlayingState {
 
     pub fn draw(&self, player: &Player, font: &Font) {
         if self.waiting_next_stage {
+            // Desenha partículas atrás da nave antes.
             let center = vec2(
                 player.hitbox().x + player.hitbox().w / 2.0,
                 player.hitbox().y + player.hitbox().h * 0.7,
@@ -398,6 +421,7 @@ impl PlayingState {
         player.draw();
 
         if self.waiting_next_stage {
+            // Desenha partículas em primeiro plano sobre a nave.
             let center = vec2(
                 player.hitbox().x + player.hitbox().w / 2.0,
                 player.hitbox().y + player.hitbox().h * 0.7,
@@ -429,7 +453,7 @@ impl PlayingState {
         }
 
         if self.waiting_next_stage {
-            //efeito espiral doidona
+            // Espiral de "próxima fase" + texto do banner.
             let center = vec2(
                 player.hitbox().x + player.hitbox().w / 2.0,
                 player.hitbox().y + player.hitbox().h / 2.0,
@@ -514,4 +538,3 @@ impl PlayingState {
         );
     }
 }
-

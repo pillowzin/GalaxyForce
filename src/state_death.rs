@@ -21,10 +21,12 @@ impl DeathState {
     }
 
     pub fn update(&mut self, dt: f32) {
+        // Temporizador simples para efeitos futuros.
         self.time += dt;
     }
 
     pub fn draw(&self, font: &Font) -> DeathAction {
+        // Tela preta sólida para o estado de morte.
         draw_rectangle(0.0, 0.0, W, H, BLACK);
 
         let center_x = W * 0.5;
@@ -76,6 +78,7 @@ fn button(
     action: DeathAction,
 ) -> Option<DeathAction> {
 
+    // Converte o mouse para a escala interna.
     let (mx, my) = mouse_position();
     let mx = mx * (INTERNAL_WIDTH as f32 / screen_width());
     let my = my * (INTERNAL_HEIGHT as f32 / screen_height());
@@ -85,6 +88,7 @@ fn button(
     let bw = dim.width + 40.0;
     let bh = 22.0;
 
+    // Detecção de passagem do mouse na área do rótulo.
     let hovered = Rect::new(x - bw / 2.0, y - bh / 2.0, bw, bh)
         .contains(vec2(mx, my));
 

@@ -34,6 +34,7 @@ use crate::state_death::{DeathState, DeathAction};
 const W: f32 = INTERNAL_WIDTH as f32;
 const H: f32 = INTERNAL_HEIGHT as f32;
 
+// Controlador de fluxo do jogo em alto nível.
 enum GameState {
     Menu(MenuState),
     Playing(PlayingState),
@@ -53,15 +54,17 @@ fn window_conf() -> Conf {
 
 #[macroquad::main(window_conf)]
 async fn main() {
+    // Material de pós-processamento CRT (linhas de varredura + vinheta).
     let crt_material = load_crt_material();
     
+    // Renderiza em um buffer de baixa resolução e depois escala para a janela.
     let render_target = render_target(
         INTERNAL_WIDTH,
         INTERNAL_HEIGHT,
     );
     render_target.texture.set_filter(FilterMode::Nearest);
 
-    // --- ASSETS ---
+    // --- RECURSOS ---
     let player_texture = load_texture("sprites/spaceship.png").await.unwrap();
     let enemy_texture = load_texture("sprites/enemy.png").await.unwrap();
     let enemy2_texture = load_texture("sprites/enemy2.png").await.unwrap();
@@ -84,6 +87,7 @@ async fn main() {
         tex.set_filter(FilterMode::Nearest);
     }
 
+    // Pré-corta a folha de sprites da explosão em quadros.
     let explosion_frames = gerar_frames(32.0, 32.0, 160.0, 32.0);
 
     let pixel_font = load_ttf_font("fonts/PressStart2P-Regular.ttf")
@@ -94,22 +98,24 @@ async fn main() {
     let mut player = Player::new(player_texture.clone());
     let mut audio = AudioManager::new().await;
 
-    // --- GAME STATE ---
+    // --- ESTADO DO JOGO ---
 	let mut game_state = GameState::Menu(MenuState::new(speaker_texture.clone()));
 	audio.play_menu_music();
 
+    // Desvanecimento de entrada da tela por execução/transição.
     let mut fade_alpha = 1.0;
 
-    // --- BACKGROUND / CAMERA ---
+    // --- FUNDO / CÂMERA ---
     let mut stars: Vec<Star> = (0..120).map(|_| Star::new()).collect();
     let mut camera_offset = Vec2::ZERO;
     let mut shake_timer = 0.0;
     let mut shake_strength = 0.0;
 
-    // --- LOOP ---
+    // --- LAÇO ---
     loop {
         let dt = get_frame_time();
 
+        // Renderiza o mundo no alvo de renderização de baixa resolução.
         set_camera(&Camera2D {
             render_target: Some(render_target.clone()),
             zoom: vec2(2.0 / INTERNAL_WIDTH as f32, -2.0 / INTERNAL_HEIGHT as f32),
@@ -127,6 +133,7 @@ async fn main() {
             star.update();
         }
 
+        // Alterna pausa com Esc (exceto no menu/morte).
         if is_key_pressed(KeyCode::Escape) {
             game_state = match mem::replace(
                 &mut game_state,
@@ -147,6 +154,7 @@ async fn main() {
             };
         }
 
+        // Transição adiada para evitar conflitos de empréstimo.
         let mut next_state: Option<GameState> = None;
 
         match &mut game_state {
@@ -163,6 +171,7 @@ async fn main() {
                         shake_timer = 0.0;
                         shake_strength = 0.0;
 
+                        // Agrupa texturas necessárias para o PlayingState.
                         let assets = GameAssets {
                             normal_enemy: enemy_texture.clone(),
                             red_enemy: enemy2_texture.clone(),
@@ -194,16 +203,16 @@ async fn main() {
             }
 
             GameState::Playing(state) => {
-                // --- PLAYER ---
+                // --- JOGADOR ---
                 player.update();
 
-                // --- CAMERA FOLLOW ---
+                // --- SEGUIR CÂMERA ---
                 let screen_center_x = INTERNAL_WIDTH as f32 * 0.5;
                 let target_offset_x = (screen_center_x - player.pos.x) * 0.08;
                 camera_offset.x += (target_offset_x - camera_offset.x) * 0.1;
                 camera_offset.y = 0.0;
 
-                // --- CAMERA SHAKE ---
+                // --- TREMOR DA CÂMERA ---
                 if shake_timer > 0.0 {
                     shake_timer -= dt;
                     camera_offset += vec2(
@@ -214,7 +223,7 @@ async fn main() {
 
                 let was_flashing = player.is_flashing();
 
-                // --- GAME UPDATE ---
+                // --- ATUALIZAÇÃO DO JOGO ---
                 state.update(&mut player, dt);
                 if player.hp <= 0 {
                     next_state = Some(GameState::Death(DeathState::new()));
@@ -225,7 +234,7 @@ async fn main() {
                     shake_strength = 6.0;
                 }
 
-                // --- DRAW ---
+                // --- RENDERIZAÇÃO ---
                 for star in stars.iter() {
                     star.draw(camera_offset);
                 }
@@ -318,7 +327,7 @@ async fn main() {
             }
         }
 
-        // --- FADE VISUAL ---
+        // --- DESVANECIMENTO ---
         if fade_alpha > 0.0 {
             fade_alpha -= dt * 0.8;
             draw_rectangle(
@@ -328,6 +337,7 @@ async fn main() {
                 Color::new(0.0, 0.0, 0.0, fade_alpha),
             );
         }
+        // Volta para o espaço de tela e aplica o shader CRT.
         set_default_camera();
 
         gl_use_material(&crt_material);
@@ -348,6 +358,7 @@ async fn main() {
         );
 
         gl_use_default_material();
+        // Aplica qualquer mudança de estado pendente no fim do quadro.
         if let Some(state) = next_state {
             game_state = state;
         }

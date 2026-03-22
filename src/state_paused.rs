@@ -28,6 +28,7 @@ impl PausedState {
 	    const W: f32 = INTERNAL_WIDTH as f32;
 	    const H: f32 = INTERNAL_HEIGHT as f32;
 
+        // Sobreposição escurecida.
 	    draw_rectangle(
 	        0.0,
 	        0.0,
@@ -58,6 +59,7 @@ impl PausedState {
 		let center_x = W * 0.5;
 		let mut y = H * 0.45;
 
+        // Botões retornam assim que clicados.
 		if let Some(a) = button(center_x, y, "RESUME", font, PauseAction::Resume) {
 		    return a;
 		}
@@ -78,6 +80,7 @@ impl PausedState {
 	    let icon_size = 16.0;
 	    let speaker_y = H - 32.0;
 
+        // Seleção do sprite do ícone de áudio.
 	    let src = if muted {
 	        Rect::new(16.0, 0.0, 16.0, 16.0)
 	    } else {
@@ -96,6 +99,7 @@ impl PausedState {
 	        },
 	    );
 
+        // Alterna o som ao clicar no ícone.
 	    let mouse = mouse_internal();
 	    let rect = Rect::new(center_x - 8.0, speaker_y, 16.0, 16.0);
 
@@ -114,6 +118,7 @@ fn button(
     action: PauseAction,
 ) -> Option<PauseAction> {
 
+    // Converte o mouse para a escala interna.
     let (mx, my) = mouse_position();
     let mx = mx * (INTERNAL_WIDTH as f32 / screen_width());
     let my = my * (INTERNAL_HEIGHT as f32 / screen_height());
@@ -123,6 +128,7 @@ fn button(
     let bw = dim.width + 40.0;
     let bh = 22.0;
 
+    // Detecção de passagem do mouse na área do rótulo.
     let hovered = Rect::new(x - bw / 2.0, y - bh / 2.0, bw, bh)
         .contains(vec2(mx, my));
 

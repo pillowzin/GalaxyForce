@@ -57,7 +57,7 @@ pub fn draw(
         );
     }
 
-    // --- KILLS (lado direito, mais organizado) ---
+    // --- ABATES (lado direito, mais organizado) ---
     let skull_x = INTERNAL_WIDTH as f32 - 80.0;
 
     draw_texture_ex(

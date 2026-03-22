@@ -6,14 +6,14 @@ use crate::thruster::ThrusterParticle;
 pub struct Player {
     pub pos: Vec2,
     texture: Texture2D,
-    hit_timer: f32,
-    shake_timer: f32,
+    hit_timer: f32,      // temporizador de flash de invulnerabilidade
+    shake_timer: f32,    // temporizador visual do recuo
     particles: Vec<ThrusterParticle>,
     last_hit_dir: Vec2,
     pub hp: i32,
     pub max_hp: i32,
     pub heart_anim_frame: usize,
-    heart_anim_timer: f32,
+    heart_anim_timer: f32, // animação de perda de coração da interface
     pub heart_anim_index: i32,
 }
 
@@ -41,12 +41,14 @@ impl Player {
 
     pub fn update(&mut self) {
         let dt = get_frame_time();
+        // Diminui os temporizadores de hit/flash.
         self.hit_timer = (self.hit_timer - dt).max(0.0);
         self.shake_timer = (self.shake_timer - dt).max(0.0);
 
         let mouse = mouse_internal();
         let size = self.size();
 
+        // Movimento pelo cursor (limitado aos limites da tela).
         self.pos.x = (mouse.x - size / 2.0)
             .clamp(0.0, INTERNAL_WIDTH as f32 - size);
 
@@ -63,19 +65,20 @@ impl Player {
             self.pos.y + size,
         );
 
-        // spawn aleatório
+        // Emissão aleatória do propulsor para ruído visual.
         if rand::gen_range(0, 2) == 0 {
             self.particles.push(ThrusterParticle::new(engine));
         }
 
-        // update partículas
+        // Atualiza partículas do propulsor.
         for p in self.particles.iter_mut() {
             p.update();
         }
 
-        // remover mortas
+        // Remove partículas mortas.
         self.particles.retain(|p| !p.dead());
         
+        // Anima o ícone do coração do último HP perdido.
         if self.heart_anim_index >= 0 {
             const HEART_ANIM_FRAMES: usize = 8;
             const HEART_ANIM_FRAME_TIME: f32 = 0.05;
@@ -93,10 +96,11 @@ impl Player {
         }
     }
 
+    // Aplica dano e retorna true se o jogador morreu.
     pub fn damage(&mut self) -> bool {
         self.hp = (self.hp - 1).max(0);
 
-        // anima o coração que acabou de perder
+        // Anima o coração que acabou de perder.
         self.heart_anim_index = self.hp;
         self.heart_anim_frame = 0;
         self.heart_anim_timer = 0.0;
@@ -109,6 +113,7 @@ impl Player {
         Rect::new(self.pos.x, self.pos.y, size, size)
     }
 
+    // Dispara feedback de hit (flash + shake).
     pub fn hit(&mut self, from: Vec2) {
         self.hit_timer = 0.2;
         self.shake_timer = 0.12;
@@ -132,7 +137,7 @@ impl Player {
         let flashing = self.hit_timer > 0.0;
         let flash_alpha = (self.hit_timer / 0.2).clamp(0.0, 1.0);
 
-        // partículas atrás da nave
+        // Desenha partículas do propulsor atrás da nave.
         for p in &self.particles {
             p.draw();
         }

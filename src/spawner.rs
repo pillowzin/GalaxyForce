@@ -7,11 +7,13 @@ fn spawn_enemy(
     red_texture: Texture2D,
     miniboss_texture: Texture2D,
     boss_texture: Texture2D) -> Enemy {
+    // Gera logo acima da área visível para efeito de entrada.
     let enemy_size = 16.0;
     let pos = vec2(
         rand::gen_range(10.0, crate::config::INTERNAL_WIDTH as f32 - enemy_size),
         rand::gen_range(-200.0, -20.0));
 
+    // Velocidade base por tipo.
     let speed = match kind {
         EnemyKind::Normal => rand::gen_range(2.0, 4.0),
         EnemyKind::Red => rand::gen_range(2.5, 4.5),
@@ -39,8 +41,9 @@ pub fn inimigos_para_fase(
 ) -> Vec<Enemy> {
     let mut enemies = Vec::new();
 
+    // Composição de ondas feita à mão por fase.
     match stage {
-        // WAVE 1 — tutorial
+        // ONDA 1 — tutorial
         1 => {
             for _ in 0..8 {
                 enemies.push(spawn_enemy(
@@ -53,7 +56,7 @@ pub fn inimigos_para_fase(
             }
         }
 
-        // WAVE 2
+        // ONDA 2
         2 => {
             for _ in 0..12 {
                 enemies.push(spawn_enemy(
@@ -66,7 +69,7 @@ pub fn inimigos_para_fase(
             }
         }
 
-        // WAVE 3 — primeiros reds
+        // ONDA 3 — primeiros vermelhos
         3 => {
             for _ in 0..6 {
                 enemies.push(spawn_enemy(
@@ -88,7 +91,7 @@ pub fn inimigos_para_fase(
             }
         }
 
-        // WAVE 4
+        // ONDA 4
         4 => {
             for _ in 0..4 {
                 enemies.push(spawn_enemy(
@@ -110,7 +113,7 @@ pub fn inimigos_para_fase(
             }
         }
 
-        // WAVE 5 — pré miniboss
+        // ONDA 5 — pré mini-chefe
         5 => {
             for _ in 0..2 {
                 enemies.push(spawn_enemy(
@@ -132,7 +135,7 @@ pub fn inimigos_para_fase(
             }
         }
 
-        // WAVE 6 — primeiro miniboss
+        // ONDA 6 — primeiro mini-chefe
         6 => {
             for _ in 0..6 {
                 enemies.push(spawn_enemy(
@@ -145,7 +148,7 @@ pub fn inimigos_para_fase(
             }
         }
 
-        // WAVE 7 — caos controlado
+        // ONDA 7 — caos controlado
         7 => {
             for _ in 0..4 {
                 enemies.push(spawn_enemy(
@@ -167,7 +170,7 @@ pub fn inimigos_para_fase(
             }
         }
 
-        // WAVE 8
+        // ONDA 8
         8 => {
             for _ in 0..1 {
                 enemies.push(spawn_enemy(
@@ -189,7 +192,7 @@ pub fn inimigos_para_fase(
             }
         }
 
-        // WAVE 9 — preparação final
+        // ONDA 9 — preparação final
         9 => {
             for _ in 0..10 {
                 enemies.push(spawn_enemy(
@@ -220,29 +223,8 @@ pub fn inimigos_para_fase(
                     boss_texture.clone(),
                 ));
             }
-        // LOOP INFINITO
         _ => {
-            let extra = stage - 10;
-
-            for _ in 0..(8 + extra * 2) {
-                enemies.push(spawn_enemy(
-                    EnemyKind::Red,
-                    normal_texture.clone(),
-                    red_texture.clone(),
-                    miniboss_texture.clone(),
-                    boss_texture.clone(),
-                ));
-            }
-
-            for _ in 0..(1 + extra / 2) {
-                enemies.push(spawn_enemy(
-                    EnemyKind::MiniBoss,
-                    normal_texture.clone(),
-                    red_texture.clone(),
-                    miniboss_texture.clone(),
-                    boss_texture.clone(),
-                ));
-            }
+        // Acabou o jogo
         }
     }
     enemies

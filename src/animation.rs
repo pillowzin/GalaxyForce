@@ -8,6 +8,7 @@ pub fn gerar_frames(
 ) -> Vec<Rect> {
     let mut frames = Vec::new();
 
+    // Calcula o grid com base nas dimensões da folha.
     let cols = (sheet_w / frame_w) as i32;
     let rows = (sheet_h / frame_h) as i32;
 
@@ -43,6 +44,7 @@ impl Animation {
     }
 
     pub fn update(&mut self) {
+        // Avança para o próximo quadro com base no tempo decorrido.
         self.timer += get_frame_time();
         if self.timer >= self.speed {
             self.timer = 0.0;

@@ -35,6 +35,7 @@ impl Explosion {
             return;
         }
 
+        // Avança a animação baseado no tempo de quadro.
         self.frame_timer += dt;
 
         if self.frame_timer >= self.frame_duration {
@@ -52,6 +53,7 @@ impl Explosion {
             return;
         }
 
+        // Desenha o quadro atual escalado para o tamanho do jogo.
         let frame = self.frames[self.current_frame];
 
         draw_texture_ex(

@@ -15,6 +15,7 @@ impl Star {
 
         Self {
 
+            // Geração aleatória na tela.
             pos: vec2(
                 rand::gen_range(0.0, INTERNAL_WIDTH as f32),
                 rand::gen_range(0.0, INTERNAL_HEIGHT as f32),
@@ -30,11 +31,13 @@ impl Star {
 
         let dt = get_frame_time();
 
+        // Deriva para baixo com leve balanço horizontal.
         self.pos.y += self.speed * dt;
         self.pos.x += (self.pos.y * 0.05).sin() * 10.0 * dt;
 
         if self.pos.y > INTERNAL_HEIGHT as f32 {
 
+            // Volta para o topo quando sai da tela.
             self.pos.y = 0.0;
 
             self.pos.x = rand::gen_range(
@@ -47,8 +50,10 @@ impl Star {
     pub fn draw(&self, camera_offset: Vec2) {
         let t = get_time() as f32;
 
+        // Brilho baseado no tempo + deslocamento por estrela.
         let twinkle = (t * 3.0 + self.twinkle_offset).sin() * 0.3 + 0.7;
 
+        // Profundidade controla paralaxe e brilho.
         let depth = (self.speed / 80.0).clamp(0.2, 1.0);
         let brightness = (self.speed / 80.0).clamp(0.3, 1.0);
 

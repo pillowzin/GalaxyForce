@@ -3,11 +3,12 @@ use macroquad::audio::*;
 pub struct AudioManager {
     theme: Sound,
     click: Sound,
-    pub music_muted: bool,
+    pub music_muted: bool, // controle global de música
 }
 
 impl AudioManager {
     pub async fn new() -> Self {
+        // Carrega os recursos de áudio do menu/interface na inicialização.
         let theme = load_sound("audio/seila.wav").await.unwrap();
         let click = load_sound("audio/click.wav").await.unwrap();
 
@@ -34,6 +35,7 @@ impl AudioManager {
     }
 
     pub fn toggle_music(&mut self) {
+        // Para ou reinicia o tema em loop.
         self.music_muted = !self.music_muted;
 
         if self.music_muted {

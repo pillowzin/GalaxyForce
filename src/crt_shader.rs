@@ -26,10 +26,12 @@ uniform sampler2D Texture;
 void main() {
     vec2 p = uv;
 
+    // Escurecimento por linha de varredura.
     float scanline = sin(p.y * 240.0 * 3.14159) * 0.04;
     vec3 color = texture2D(Texture, p).rgb;
     color -= scanline;
 
+    // Vinheta simples.
     float dist = distance(p, vec2(0.5));
     color *= smoothstep(0.75, 0.45, dist);
 
@@ -38,6 +40,7 @@ void main() {
 "#;
 
 pub fn load_crt_material() -> Material {
+    // Compila o shader CRT em um material reutilizável.
     load_material(
         ShaderSource::Glsl {
             vertex: CRT_VERTEX,

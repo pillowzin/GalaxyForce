@@ -19,8 +19,8 @@ pub struct Enemy {
     pub speed: f32,
     pub hp: i32,
 
-    wobble_count: u32,
-    target_x: f32,
+    wobble_count: u32, // temporizador para atualizar target_x
+    target_x: f32,     // alvo de deslocamento horizontal
 
     pub texture: Texture2D,
     pub anim: Animation,
@@ -33,7 +33,7 @@ pub struct EnemyVisual {
     pub frames: Vec<Rect>,
 }
 
-// definindo qual sprite aparece pelo tipo de inimigo
+// Seleciona a folha de sprites + quadros por tipo de inimigo.
 pub fn visual_por_kind(
     kind: EnemyKind,
     normal_texture: Texture2D,
@@ -78,6 +78,7 @@ impl Enemy {
         texture: Texture2D,
         frames: Vec<Rect>,
     ) -> Self {
+        // HP base por tipo.
         let hp = match kind {
             EnemyKind::Normal => 1,
             EnemyKind::Red => 2,
@@ -85,6 +86,7 @@ impl Enemy {
             EnemyKind::Boss => 30,
         };
 
+        // Alvo inicial de deslocamento horizontal.
         let target_x = pos.x + rand::gen_range(-50.0, 50.0);
 
         Self {
@@ -109,7 +111,7 @@ impl Enemy {
             let scale = scale_for_kind(self.kind);
             let size = SPRITE_SIZE * SCALE * scale;
 
-            // movimento horizontal pesado
+            // Varredura horizontal pesada e lenta com ricochete nas paredes.
             self.pos.x += self.speed * dt * 60.0;
 
             let half = size * 0.5;
@@ -122,7 +124,7 @@ impl Enemy {
                 self.speed = -self.speed.abs();
             }
 
-            // leve seno vertical
+            // Oscilação vertical leve.
             let t = get_time() as f32;
             self.pos.y = 80.0 + (t * 1.5).sin() * 25.0;
 
@@ -138,31 +140,31 @@ impl Enemy {
             let scale = scale_for_kind(self.kind);
             let size = SPRITE_SIZE * SCALE * scale;
 
-            // centro do miniboss
+            // Centro do mini-chefe (para direção).
             let self_center = self.pos + vec2(size / 2.0, size / 2.0);
 
-            // centro do player (pivot real)
+            // Centro aproximado do jogador para mirar.
             let player_center = vec2(player_x, INTERNAL_HEIGHT as f32 * 0.5);
 
-            // direção desejada (alvo)
+            // Direção desejada em direção ao jogador.
             let desired_dir = (player_center - self_center).normalize_or_zero();
 
-            // quanto ele "vira" por frame (quanto MENOR, mais pesado)
+            // Quanto ele vira por quadro (menor = mais pesado).
             let turn_strength = 0.065;
 
-            // steering: mistura direção atual com a desejada
+            // Direção: mistura velocidade atual com direção desejada.
             self.vel += desired_dir * turn_strength;
             if self.vel.length() > 0.001 {
                 self.vel = self.vel.normalize();
             }
 
-            // aceleração gradual
+            // Aceleração gradual.
             self.speed = (self.speed + 0.035).min(6.5);
 
-            // movimento
+            // Move com base na velocidade.
             self.pos += self.vel * self.speed * dt * 60.0;
 
-            // rotação segue a direção ATUAL, não o alvo
+            // Rotação segue o movimento atual, não o alvo.
             self.rotation = self.vel.y.atan2(self.vel.x) + std::f32::consts::FRAC_PI_2;
 
             self.anim.update();
@@ -172,6 +174,7 @@ impl Enemy {
         let dt = get_frame_time();
         let time = get_time() as f32;
 
+        // Velocidade base de queda + oscilação senoidal suave.
         self.pos.y += self.speed * speed_mult * dt * 60.0
             + (time * 10.0).sin() * 2.0;
 
@@ -185,8 +188,10 @@ impl Enemy {
                 .clamp(10.0, INTERNAL_WIDTH as f32 - 26.0);
         }
 
+        // Lerp em direção ao alvo horizontal.
         self.pos.x += (self.target_x - self.pos.x) * 0.15;
 
+        // Recicla inimigos não-chefes que saem da tela para o topo.
         if self.pos.y > INTERNAL_HEIGHT as f32
             && self.kind != EnemyKind::MiniBoss
             && self.kind != EnemyKind::Boss
@@ -195,7 +200,7 @@ impl Enemy {
             self.pos.x = rand::gen_range(10.0, INTERNAL_WIDTH as f32 - 26.0);
             self.target_x = self.pos.x;
         }
-        // self.rotation = std::f32::consts::PI;
+        // Balanço sutil durante a queda.
         self.rotation = std::f32::consts::PI
             + (get_time() as f32 * 2.0).sin() * 0.065;
 

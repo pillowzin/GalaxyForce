@@ -26,7 +26,7 @@ struct Spark {
 pub struct MenuState {
     time: f32,
     stars: Vec<Star>,
-    fade: f32,
+    fade: f32, // desvanecimento de entrada ao entrar
     speaker: Texture2D,
 }
 
@@ -75,6 +75,7 @@ impl MenuState {
     }
 
     pub fn draw(&self, font: &Font, muted: bool) {
+        // Preenchimento do fundo.
         draw_rectangle(
             0.0,
             0.0,
@@ -83,6 +84,7 @@ impl MenuState {
             Color::new(0.02, 0.02, 0.05, 1.0),
         );
 
+        // Campo de estrelas com brilho sutil.
         for star in &self.stars {
             let twinkle = (self.time * 4.0 + star.pos.x).sin() * 0.4 + 0.6;
             draw_rectangle(
@@ -94,6 +96,7 @@ impl MenuState {
             );
         }
 
+        // Animação de flutuação do título.
         let offset = (self.time * 1.5).sin() * 2.0;
         let center_x = W * 0.5;
         let title_size = 28;
@@ -119,7 +122,7 @@ impl MenuState {
             },
         );
 
-        // glow vermelho
+        // brilho vermelho
         draw_text_ex(
             a,
             center_x - da.width / 2.0,
@@ -132,7 +135,7 @@ impl MenuState {
             },
         );
 
-        // highlight
+        // realce
         draw_text_ex(
             a,
             center_x - da.width / 2.0,
@@ -145,7 +148,7 @@ impl MenuState {
             },
         );
 
-        // FORCE
+        // FORCE (parte do título)
 
         draw_text_ex(
             b,
@@ -171,6 +174,7 @@ impl MenuState {
             },
         );
 
+        // Espiral de faíscas atrás do título para profundidade.
         let center = vec2(center_x, TITLE_Y - 28.0);
         let radius = 80.0;
 
@@ -240,6 +244,7 @@ impl MenuState {
 
         let icon_size = 16.0;
 
+        // Ícone de som alterna entre quadros mudo/ativo.
         let src = if muted {
             Rect::new(16.0, 0.0, 16.0, 16.0)
         } else {
@@ -274,6 +279,7 @@ impl MenuState {
             },
         );
 
+        // Sobreposição de desvanecimento de entrada.
         if self.fade > 0.0 {
             draw_rectangle(
                 0.0,
@@ -287,6 +293,7 @@ impl MenuState {
     }
 
     pub fn draw_buttons(&self, font: &Font) -> MenuAction {
+        // Retorna a primeira ação clicada, se houver.
         let center_x = W * 0.5;
         let y = MENU_START_Y;
 
@@ -304,6 +311,7 @@ impl MenuState {
         action: MenuAction,
     ) -> Option<MenuAction> {
 
+        // Converte o mouse para a escala interna.
         let (mx, my) = mouse_position();
         let mx = mx * (INTERNAL_WIDTH as f32 / screen_width());
         let my = my * (INTERNAL_HEIGHT as f32 / screen_height());
@@ -313,6 +321,7 @@ impl MenuState {
         let bw = dim.width + 40.0;
         let bh = 22.0;
 
+        // Detecção de passagem do mouse no espaço lógico.
         let hovered = Rect::new(x - bw / 2.0, y - bh / 2.0, bw, bh)
             .contains(vec2(mx, my));
 
@@ -329,7 +338,7 @@ impl MenuState {
             Color::new(0.6, 0.7, 1.0, 1.0)
         };
 
-        // linha glow atrás
+        // linha de brilho atrás
         let line_w = bw * scale;
         draw_rectangle(
             x - line_w / 2.0,
@@ -339,7 +348,7 @@ impl MenuState {
             Color::new(0.2, 0.6 + glow * 0.4, 1.0, 0.8),
         );
 
-        // glow extra quando hover
+        // brilho extra quando passa o mouse
         if hovered {
             draw_rectangle(
                 x - line_w / 2.0,

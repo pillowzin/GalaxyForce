@@ -3,7 +3,7 @@ use crate::config::{PLAYER_BULLET_HEIGHT, PLAYER_BULLET_WIDTH};
 
 pub struct Bullet {
     pub pos: Vec2,
-    speed: f32,
+    speed: f32, // velocidade para cima em pixels/seg
 }
 
 impl Bullet {
@@ -15,6 +15,7 @@ impl Bullet {
     }
 
     pub fn update(&mut self) {
+        // Move para cima a cada quadro.
         self.pos.y -= self.speed * get_frame_time();
     }
 
@@ -38,6 +39,7 @@ impl Bullet {
     }
 
     pub fn offscreen(&self) -> bool {
+        // Limite conservador acima do topo da tela.
         self.pos.y < -16.0
     }
 }

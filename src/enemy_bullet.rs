@@ -5,7 +5,7 @@ pub struct EnemyBullet {
     pub pos: Vec2,
     pub vel: Vec2,
     pub radius: f32,
-    pub bounces_left: i32,
+    pub bounces_left: i32, // ricochetes restantes nas paredes
 }
 
 impl EnemyBullet {
@@ -36,6 +36,7 @@ impl EnemyBullet {
     }
 
     pub fn is_dead(&self) -> bool {
+        // A bala expira após um número fixo de ricochetes.
         self.bounces_left <= 0
     }
 
