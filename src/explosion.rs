@@ -1,9 +1,10 @@
 use macroquad::prelude::*;
-use crate::config::{SCALE};
+use crate::config::SCALE;
+use std::rc::Rc;
 
 pub struct Explosion {
     pos: Vec2,
-    frames: Vec<Rect>,
+    frames: Rc<Vec<Rect>>,
     current_frame: usize,
     frame_timer: f32,
     frame_duration: f32,
@@ -16,7 +17,7 @@ impl Explosion {
     pub fn new(
         pos: Vec2,
         texture: Texture2D,
-        frames: Vec<Rect>,
+        frames: Rc<Vec<Rect>>,
     ) -> Self {
         Self {
             pos,

@@ -30,6 +30,7 @@ use crate::state_paused::{PausedState, PauseAction};
 use crate::state_menu::{MenuState, MenuAction};
 use crate::star::Star;
 use crate::state_death::{DeathState, DeathAction};
+use std::rc::Rc;
 
 const W: f32 = INTERNAL_WIDTH as f32;
 const H: f32 = INTERNAL_HEIGHT as f32;
@@ -88,7 +89,7 @@ async fn main() {
     }
 
     // Pré-corta a folha de sprites da explosão em quadros.
-    let explosion_frames = gerar_frames(32.0, 32.0, 160.0, 32.0);
+    let explosion_frames = Rc::new(gerar_frames(32.0, 32.0, 160.0, 32.0));
 
     let pixel_font = load_ttf_font("fonts/PressStart2P-Regular.ttf")
         .await

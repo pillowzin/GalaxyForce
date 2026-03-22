@@ -1,5 +1,6 @@
 use macroquad::prelude::*;
 use macroquad::audio::*;
+use std::rc::Rc;
 
 use crate::player::Player;
 use crate::enemy::{Enemy, EnemyKind};
@@ -39,7 +40,7 @@ pub struct PlayingState {
     boss_texture: Texture2D,
 
     explosion_texture: Texture2D,
-    explosion_frames: Vec<Rect>,
+    explosion_frames: Rc<Vec<Rect>>,
 
     laser_sound: Sound,
     collide_sound: Sound,
@@ -51,7 +52,7 @@ pub struct GameAssets {
     pub miniboss: Texture2D,
     pub boss: Texture2D,
     pub explosion: Texture2D,
-    pub explosion_frames: Vec<Rect>,
+    pub explosion_frames: Rc<Vec<Rect>>,
     pub heart: Texture2D,
     pub skull: Texture2D,
 }
@@ -264,8 +265,7 @@ impl PlayingState {
     }
 
     fn handle_player_bullet_enemy_collision(&mut self) {
-
-        let mut bullets_to_remove = Vec::new();
+        let mut remove_bullet = vec![false; self.bullets.len()];
 
         for (bi, bullet) in self.bullets.iter().enumerate() {
 
@@ -279,7 +279,7 @@ impl PlayingState {
                         self.kills += 1;
                     }
 
-                    bullets_to_remove.push(bi);
+                    remove_bullet[bi] = true;
 
                     let center = vec2(
                         enemy.hitbox().x + enemy.hitbox().w / 2.0,
@@ -310,9 +310,8 @@ impl PlayingState {
 
         // Remove tiros que colidiram neste quadro.
         let mut i = 0;
-
         self.bullets.retain(|_| {
-            let keep = !bullets_to_remove.contains(&i);
+            let keep = !remove_bullet[i];
             i += 1;
             keep
         });
