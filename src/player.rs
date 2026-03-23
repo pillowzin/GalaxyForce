@@ -39,8 +39,7 @@ impl Player {
         SPRITE_SIZE * SCALE
     }
 
-    pub fn update(&mut self) {
-        let dt = get_frame_time();
+    pub fn update(&mut self, dt: f32) {
         // Diminui os temporizadores de hit/flash.
         self.hit_timer = (self.hit_timer - dt).max(0.0);
         self.shake_timer = (self.shake_timer - dt).max(0.0);
@@ -72,7 +71,7 @@ impl Player {
 
         // Atualiza partículas do propulsor.
         for p in self.particles.iter_mut() {
-            p.update();
+            p.update(dt);
         }
 
         // Remove partículas mortas.

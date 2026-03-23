@@ -170,7 +170,7 @@ impl PlayingState {
         }
     }
 
-    fn update_enemies(&mut self, player: &Player) {
+    fn update_enemies(&mut self, player: &Player, dt: f32) {
 
         // Leve aumento de dificuldade por fase.
         let speed_mult = 1.0 + (self.stage as f32 - 1.0) * 0.07;
@@ -180,7 +180,7 @@ impl PlayingState {
 
         // Atualização de movimento por inimigo.
         for enemy in self.enemies.iter_mut() {
-            enemy.update_with_speed_mult(speed_mult, player_center_x);
+            enemy.update_with_speed_mult(dt, speed_mult, player_center_x);
         }
 
         // Chefe atira balas ricocheteando ocasionalmente.
@@ -205,10 +205,10 @@ impl PlayingState {
         }
     }
 
-    fn update_enemy_bullets(&mut self) {
+    fn update_enemy_bullets(&mut self, dt: f32) {
 
         for bullet in self.enemy_bullets.iter_mut() {
-            bullet.update();
+            bullet.update(dt);
         }
 
         self.enemy_bullets.retain(|b| !b.is_dead());
@@ -246,10 +246,10 @@ impl PlayingState {
         }
     }
 
-    fn update_player_bullets(&mut self) {
+    fn update_player_bullets(&mut self, dt: f32) {
 
         for bullet in self.bullets.iter_mut() {
-            bullet.update();
+            bullet.update(dt);
         }
 
         self.bullets.retain(|b| !b.offscreen());
@@ -386,12 +386,12 @@ impl PlayingState {
         self.shoot_timer += dt;
 
         self.handle_player_shoot(player);
-        self.update_enemies(player);
-        self.update_enemy_bullets();
+        self.update_enemies(player, dt);
+        self.update_enemy_bullets(dt);
 
         self.handle_player_enemy_collision(player);
 
-        self.update_player_bullets();
+        self.update_player_bullets(dt);
         self.update_explosions(dt);
 
         self.handle_player_bullet_enemy_collision();

@@ -19,9 +19,7 @@ impl ThrusterParticle {
         }
     }
 
-    pub fn update(&mut self) {
-        let dt = get_frame_time();
-
+    pub fn update(&mut self, dt: f32) {
         // movimento lento
         self.pos += self.vel * dt * 20.0;
 

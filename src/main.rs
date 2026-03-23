@@ -132,7 +132,7 @@ async fn main() {
 
         // estrelas globais (jogo)
         for star in stars.iter_mut() {
-            star.update();
+            star.update(dt);
         }
 
         // Alterna pausa com Esc (exceto no menu/morte).
@@ -206,7 +206,7 @@ async fn main() {
 
             GameState::Playing(state) => {
                 // --- JOGADOR ---
-                player.update();
+                player.update(dt);
 
                 // --- SEGUIR CÂMERA ---
                 let screen_center_x = INTERNAL_WIDTH as f32 * 0.5;

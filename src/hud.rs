@@ -73,6 +73,15 @@ pub fn draw(
 
     let text = format!("{:04}", kills);
 
+    // mede o texto na tela
+    let text_dim = measure_text(&text, None, 18, 1.0);
+
+    // padding igual ao da esquerda (10px)
+    let padding = 10.0;
+
+    // calcula posição correta
+    let skull_x = INTERNAL_WIDTH as f32 - padding - (16.0 + 8.0 + text_dim.width);
+
     // sombra (profundidade)
     draw_text(
         &text,

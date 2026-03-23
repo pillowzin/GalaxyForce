@@ -27,11 +27,8 @@ impl Star {
         }
     }
 
-    pub fn update(&mut self) {
-
-        let dt = get_frame_time();
-
-        // Deriva para baixo com leve balanço horizontal.
+    pub fn update(&mut self, dt: f32) {
+     // Deriva para baixo com leve balanço horizontal.
         self.pos.y += self.speed * dt;
         self.pos.x += (self.pos.y * 0.05).sin() * 10.0 * dt;
 

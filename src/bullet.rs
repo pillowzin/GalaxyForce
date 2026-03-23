@@ -14,9 +14,9 @@ impl Bullet {
         }
     }
 
-    pub fn update(&mut self) {
+    pub fn update(&mut self, dt: f32) {
         // Move para cima a cada quadro.
-        self.pos.y -= self.speed * get_frame_time();
+        self.pos.y -= self.speed * dt;
     }
 
     pub fn draw(&self) {

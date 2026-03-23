@@ -104,15 +104,13 @@ impl Enemy {
         }
     }
     
-    pub fn update_with_speed_mult(&mut self, speed_mult: f32, player_x: f32) {
+    pub fn update_with_speed_mult(&mut self, dt: f32, speed_mult: f32, player_x: f32) {
         if self.kind == EnemyKind::Boss {
-            let dt = get_frame_time();
-
             let scale = scale_for_kind(self.kind);
             let size = SPRITE_SIZE * SCALE * scale;
 
             // Varredura horizontal pesada e lenta com ricochete nas paredes.
-            self.pos.x += self.speed * dt * 60.0;
+            self.pos.x += self.speed * dt;
 
             let half = size * 0.5;
             if self.pos.x - half < 0.0 {

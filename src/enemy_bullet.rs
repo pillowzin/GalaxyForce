@@ -18,9 +18,8 @@ impl EnemyBullet {
         }
     }
 
-    pub fn update(&mut self) {
-        let dt = get_frame_time();
-        self.pos += self.vel * dt * 60.0;
+    pub fn update(&mut self, dt: f32) {
+        self.pos += self.vel * dt;
 
         // ricochete horizontal
         if self.pos.x - self.radius <= 0.0 || self.pos.x + self.radius >= INTERNAL_WIDTH as f32 {
