@@ -81,7 +81,7 @@ impl PlayingState {
 
         let stage = 1;
 
-        // Cria a primeira onda (spawn gradual).
+        // Cria a primeir))a onda (spawn gradual).
         let pending = inimigos_para_fase(
             stage,
             assets.normal_enemy.clone(),
