@@ -1,6 +1,7 @@
 use macroquad::prelude::*;
 use macroquad::audio::*;
 use std::rc::Rc;
+use std::collections::VecDeque;
 
 use crate::player::Player;
 use crate::enemy::{Enemy, EnemyKind};
@@ -21,6 +22,7 @@ struct StageParticle {
 pub struct PlayingState {
     pub stage: u32,
     pub enemies: Vec<Enemy>,
+    pending_enemies: VecDeque<Enemy>,
     pub bullets: Vec<Bullet>,
     pub explosions: Vec<Explosion>,
     pub enemy_bullets: Vec<EnemyBullet>,
@@ -31,6 +33,8 @@ pub struct PlayingState {
     stage_particles: Vec<StageParticle>,
 
     shoot_timer: f32,          // recarga dos tiros do jogador
+    spawn_timer: f32,          // temporizador de spawn gradual
+    spawn_interval: f32,       // intervalo atual entre spawns
     waiting_next_stage: bool,  // flag de transição após limpar a fase
     stage_timer: f32,          // tempo decorrido durante a transição
 
@@ -57,8 +61,17 @@ pub struct GameAssets {
     pub skull: Texture2D,
 }
 
-const SHOOT_DELAY: f32 = 0.2;
+const SHOOT_DELAY: f32 = 0.28;
 const NEXT_STAGE_DURATION: f32 = 1.8;
+
+fn spawn_interval_for_stage(stage: u32) -> f32 {
+    // Intervalo menor em fases avançadas, sem picos bruscos.
+    let base = 0.08;
+    let min = 0.05;
+    let step = 0.03;
+    let s = stage.saturating_sub(1) as f32;
+    (base - s * step).max(min)
+}
 
 impl PlayingState {
     pub async fn new(assets: GameAssets) -> Self {
@@ -68,8 +81,8 @@ impl PlayingState {
 
         let stage = 1;
 
-        // Cria a primeira onda.
-        let enemies = inimigos_para_fase(
+        // Cria a primeira onda (spawn gradual).
+        let pending = inimigos_para_fase(
             stage,
             assets.normal_enemy.clone(),
             assets.red_enemy.clone(),
@@ -79,12 +92,15 @@ impl PlayingState {
 
         Self {
             stage,
-            enemies,
+            enemies: Vec::new(),
+            pending_enemies: VecDeque::from(pending),
             bullets: Vec::new(),
             explosions: Vec::new(),
             enemy_bullets: Vec::new(),
 
             shoot_timer: 0.0,
+            spawn_timer: 0.0,
+            spawn_interval: spawn_interval_for_stage(stage),
             waiting_next_stage: false,
             stage_timer: 0.0,
 
@@ -106,6 +122,22 @@ impl PlayingState {
                 speed: 1.5 + rand::gen_range(0.5, 2.0),
                 color_offset: i as f32,
             }).collect(),
+        }
+    }
+
+    fn update_spawning(&mut self, dt: f32) {
+        if self.pending_enemies.is_empty() {
+            return;
+        }
+
+        self.spawn_timer += dt;
+        let interval = self.spawn_interval;
+
+        while self.spawn_timer >= interval && !self.pending_enemies.is_empty() {
+            self.spawn_timer -= interval;
+            if let Some(enemy) = self.pending_enemies.pop_front() {
+                self.enemies.push(enemy);
+            }
         }
     }
 
@@ -348,7 +380,7 @@ impl PlayingState {
 
     fn handle_stage_transition(&mut self, dt: f32) {
 
-        if self.enemies.is_empty() && !self.waiting_next_stage {
+        if self.enemies.is_empty() && self.pending_enemies.is_empty() && !self.waiting_next_stage {
 
             // Inicia transição quando a onda é limpa.
             self.waiting_next_stage = true;
@@ -370,13 +402,17 @@ impl PlayingState {
                     println!("acabou!");
                 }
 
-                self.enemies = inimigos_para_fase(
+                let pending = inimigos_para_fase(
                     self.stage,
                     self.normal_enemy_texture.clone(),
                     self.red_enemy_texture.clone(),
                     self.miniboss_texture.clone(),
                     self.boss_texture.clone(),
                 );
+                self.enemies.clear();
+                self.pending_enemies = VecDeque::from(pending);
+                self.spawn_interval = spawn_interval_for_stage(self.stage);
+                self.spawn_timer = 0.0;
             }
         }
     }
@@ -386,6 +422,7 @@ impl PlayingState {
         self.shoot_timer += dt;
 
         self.handle_player_shoot(player);
+        self.update_spawning(dt);
         self.update_enemies(player, dt);
         self.update_enemy_bullets(dt);
 

@@ -128,13 +128,11 @@ impl Enemy {
 
             self.rotation = (t * 0.5).sin() * 0.04;
 
-            self.anim.update();
+            self.anim.update(dt);
             return;
         }
 
         if self.kind == EnemyKind::MiniBoss {
-            let dt = get_frame_time();
-
             let scale = scale_for_kind(self.kind);
             let size = SPRITE_SIZE * SCALE * scale;
 
@@ -165,11 +163,10 @@ impl Enemy {
             // Rotação segue o movimento atual, não o alvo.
             self.rotation = self.vel.y.atan2(self.vel.x) + std::f32::consts::FRAC_PI_2;
 
-            self.anim.update();
+            self.anim.update(dt);
             return;
         }
 
-        let dt = get_frame_time();
         let time = get_time() as f32;
 
         // Velocidade base de queda + oscilação senoidal suave.
@@ -202,7 +199,7 @@ impl Enemy {
         self.rotation = std::f32::consts::PI
             + (get_time() as f32 * 2.0).sin() * 0.065;
 
-        self.anim.update();
+        self.anim.update(dt);
     }
 
     pub fn hitbox(&self) -> Rect {

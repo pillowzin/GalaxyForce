@@ -43,9 +43,9 @@ impl Animation {
         }
     }
 
-    pub fn update(&mut self) {
+    pub fn update(&mut self, dt: f32) {
         // Avança para o próximo quadro com base no tempo decorrido.
-        self.timer += get_frame_time();
+        self.timer += dt;
         while self.timer >= self.speed {
             self.timer -= self.speed;
             self.current = (self.current + 1) % self.frames.len();

@@ -1,4 +1,5 @@
 use macroquad::prelude::*;
+use crate::config::{INTERNAL_WIDTH, SCALE};
 use crate::enemy::{Enemy, EnemyKind, visual_por_kind};
 
 fn spawn_enemy(
@@ -8,10 +9,21 @@ fn spawn_enemy(
     miniboss_texture: Texture2D,
     boss_texture: Texture2D) -> Enemy {
     // Gera logo acima da área visível para efeito de entrada.
-    let enemy_size = 16.0;
+    let scale = match kind {
+        EnemyKind::Normal => 1.0,
+        EnemyKind::Red => 1.2,
+        EnemyKind::MiniBoss => 1.6,
+        EnemyKind::Boss => 2.0,
+    };
+
+    let enemy_size = 16.0 * SCALE * scale;
+
+    let margin = 10.0;
+
     let pos = vec2(
-        rand::gen_range(10.0, crate::config::INTERNAL_WIDTH as f32 - enemy_size),
-        rand::gen_range(-200.0, -20.0));
+        rand::gen_range(margin, INTERNAL_WIDTH as f32 - margin - enemy_size),
+        rand::gen_range(-80.0, -20.0),
+    );
 
     // Velocidade base por tipo.
     let speed = match kind {
