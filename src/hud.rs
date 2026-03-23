@@ -90,4 +90,7 @@ pub fn draw(
         18.0,
         WHITE,
     );
+    
+    //debug
+    draw_text(&format!("FPS: {}", get_fps()), 10.0, 20.0, 20.0, WHITE);
 }

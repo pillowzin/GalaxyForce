@@ -114,8 +114,9 @@ async fn main() {
 
     // --- LAÇO ---
     loop {
-        let dt = get_frame_time();
-
+        let mut dt = get_frame_time();
+        dt = dt.min(1.0 / 30.0); // evita picos absurdos
+        
         // Renderiza o mundo no alvo de renderização de baixa resolução.
         set_camera(&Camera2D {
             render_target: Some(render_target.clone()),
