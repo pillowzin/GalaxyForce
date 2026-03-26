@@ -53,4 +53,4 @@ The game runs at an internal resolution of 256x350 and scales to a 512x700 windo
 - Font: Press Start 2P (loaded from `fonts/PressStart2P-Regular.ttf`).
 
 ## License
-No license specified.
+All rights reserved.
