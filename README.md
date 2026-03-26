@@ -33,6 +33,10 @@ A fast, arcade-style space shooter built with Rust and Macroquad. Pilot a tiny s
 cargo run
 ```
 
+## Itch.io:
+
+https://eujakezin.itch.io/galaxyforce
+
 The game runs at an internal resolution of 256x350 and scales to a 512x700 window.
 
 ## Folder Structure
