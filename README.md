@@ -1,4 +1,4 @@
-# Galaxy Forces
+# Galaxy Force
 
 A fast, arcade-style space shooter built with Rust and Macroquad. Pilot a tiny ship through escalating enemy waves, rack up kills, and survive bosses in a retro CRT-styled presentation.
 
